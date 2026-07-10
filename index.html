@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSONPath Tester</title>
+<meta name="description" content="Paste JSON and a JSONPath expression to see matched values and their paths live, in your browser. A practical JSONPath subset, no server, no tracking.">
+<link rel="canonical" href="https://0xelitesystem.github.io/json-path-tester/">
+<meta property="og:title" content="JSONPath Tester">
+<meta property="og:description" content="Paste JSON and a JSONPath expression to see matched values and their paths live, in your browser.">
+<meta property="og:url" content="https://0xelitesystem.github.io/json-path-tester/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"JSONPath Tester","applicationCategory":"DeveloperApplication","operatingSystem":"Any (browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://0xelitesystem.github.io/json-path-tester/","author":{"@type":"Person","name":"0xelitesystem","url":"https://elitesystem.ai"}}
+</script>
+<style>
+:root {
+  --bg: #fafaf6;
+  --surface: #ffffff;
+  --ink: #0a1d1e;
+  --ink-soft: #2c4a4c;
+  --rule: #c8d4d3;
+  --teal: #0f5c60;
+  --teal-deep: #0a4548;
+  --gold: #b07d2a;
+  --gold-deep: #8a611f;
+  --ok: #1a5c2e;
+  --warn: #8a5a00;
+  --err: #8b1a1a;
+  --code-bg: #f0ebe1;
+  --key: #b03d8f;
+  --path: #2660a8;
+}
+[data-theme="dark"] {
+  --bg: #0c1c1d;
+  --surface: #14292a;
+  --ink: #e8ebe6;
+  --ink-soft: #b0c0bd;
+  --rule: #2a4042;
+  --teal: #4ab4ba;
+  --teal-deep: #6dc8ce;
+  --gold: #d4a155;
+  --gold-deep: #e6b876;
+  --ok: #6dd380;
+  --warn: #d4a155;
+  --err: #e88080;
+  --code-bg: #0a1718;
+  --key: #d97ab8;
+  --path: #6da8e0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  line-height: 1.55;
+}
+.wrap { max-width: 1100px; margin: 0 auto; }
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 2px solid var(--teal);
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+}
+h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--teal);
+}
+.tag {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.75rem;
+  color: var(--gold-deep);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+[data-theme="dark"] .tag { color: var(--gold); }
+.theme-btn {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.theme-btn:hover { border-color: var(--teal); color: var(--teal); }
+.lede {
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  margin-bottom: 1.75rem;
+  max-width: 62ch;
+}
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+.input-box {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 1.25rem;
+  border-radius: 3px;
+}
+label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+textarea, input[type="text"] {
+  width: 100%;
+  background: var(--code-bg);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  padding: 0.85rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  border-radius: 2px;
+}
+textarea { min-height: 260px; resize: vertical; }
+textarea:focus, input[type="text"]:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+.path-box { display: flex; flex-direction: column; }
+.hint {
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  margin-top: 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+.input-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+button {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 2px;
+}
+button:hover { border-color: var(--teal); }
+button.primary {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: var(--surface);
+  font-weight: 600;
+}
+[data-theme="dark"] button.primary { color: var(--bg) !important; }
+button.primary:hover { background: var(--teal-deep); border-color: var(--teal-deep); }
+.presets { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.85rem; }
+.preset-btn {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.6rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+.section {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-radius: 3px;
+}
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+}
+.section-title { font-size: 0.9rem; font-weight: 600; letter-spacing: 0.02em; }
+.count { font-family: ui-monospace, monospace; font-size: 0.8rem; color: var(--ink-soft); }
+.match {
+  border-bottom: 1px solid var(--rule);
+  padding: 0.7rem 0;
+}
+.match:last-child { border-bottom: none; }
+.match-path {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.78rem;
+  color: var(--path);
+  word-break: break-all;
+  margin-bottom: 0.3rem;
+}
+.match-val {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.82rem;
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: var(--code-bg);
+  padding: 0.55rem 0.7rem;
+  border-radius: 2px;
+}
+.error-msg {
+  color: var(--err);
+  font-size: 0.85rem;
+  padding: 0.65rem;
+  background: var(--code-bg);
+  border-left: 3px solid var(--err);
+  border-radius: 2px;
+}
+.empty-msg { font-size: 0.85rem; color: var(--ink-soft); font-style: italic; }
+.privacy-note {
+  font-size: 0.78rem;
+  color: var(--gold-deep);
+  margin-top: 0.5rem;
+}
+[data-theme="dark"] .privacy-note { color: var(--gold); }
+.copy-note { font-size: 0.75rem; color: var(--ok); margin-left: 0.6rem; }
+footer {
+  margin-top: 3rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+footer a { color: var(--teal); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+.subset-note {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin-top: 0.85rem;
+  border-left: 3px solid var(--gold);
+  padding-left: 0.75rem;
+}
+@media (max-width: 640px) {
+  body { padding: 1rem 0.75rem; }
+  h1 { font-size: 1.4rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>JSONPath Tester</h1>
+    <div class="tag">Query JSON in your browser</div>
+  </div>
+  <button class="theme-btn" id="theme-toggle" type="button">Dark</button>
+</header>
+
+<p class="lede">Paste JSON and a JSONPath expression. See the matched values and the concrete path to each one, live as you type. Everything runs locally. Nothing leaves this page.</p>
+
+<div class="grid">
+  <div class="input-box">
+    <label for="json-input">JSON</label>
+    <textarea id="json-input" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
+    <div class="input-row">
+      <button id="sample-btn" type="button">Load sample</button>
+      <button id="format-btn" type="button">Format</button>
+      <button id="clear-btn" type="button">Clear</button>
+    </div>
+    <div class="privacy-note">All matching happens locally. Your JSON is never sent to any server.</div>
+  </div>
+  <div class="input-box path-box">
+    <label for="path-input">JSONPath expression</label>
+    <input type="text" id="path-input" value="$" spellcheck="false" autocapitalize="off" autocorrect="off">
+    <div class="hint">Try: $.store.book[*].author &nbsp; $..price &nbsp; $..book[?(@.price&lt;10)].title</div>
+    <div class="presets" id="presets"></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-head">
+    <div class="section-title">Matches</div>
+    <div class="count" id="count"></div>
+  </div>
+  <div id="output"></div>
+</div>
+
+<div class="subset-note">
+  This is a practical JSONPath <strong>subset</strong>, not full jq or a complete JSONPath engine. Supported: root <code>$</code>, dot and bracket child access, array index (including negative), wildcard <code>*</code>, recursive descent <code>..</code>, unions like <code>[0,2]</code> or <code>['a','b']</code>, comparison filters <code>[?(@.price&lt;10)]</code> with operators <code>== != &lt; &lt;= &gt; &gt;=</code>, and existence filters <code>[?(@.isbn)]</code>. Array slices, script expressions, and regex filters are not supported.
+</div>
+
+<footer>
+  <div>JSONPath Tester. Open source, MIT licensed. <a href="https://github.com/0xelitesystem/json-path-tester" target="_blank" rel="noopener">View source</a>.</div>
+  <div>A JSONPath subset, runs entirely offline.</div>
+</footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+// Theme toggle with prefers-color-scheme
+const themeBtn = $("theme-toggle");
+function setTheme(t) {
+  document.documentElement.setAttribute("data-theme", t);
+  themeBtn.textContent = t === "dark" ? "Light" : "Dark";
+}
+themeBtn.addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme") || "light";
+  setTheme(cur === "dark" ? "light" : "dark");
+});
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/* ---------- JSONPath engine (subset) ---------- */
+
+// Tokenize a path into a list of steps.
+// Each step: {type:'root'} {type:'child',name} {type:'wildcard'} {type:'descend'}
+//            {type:'index',i} {type:'union',names:[],indices:[]} {type:'filter',...}
+function parsePath(path) {
+  path = path.trim();
+  if (!path) throw new Error("Empty path. Start with $");
+  if (path[0] !== "$") throw new Error("A JSONPath must start with $");
+  const steps = [{ type: "root" }];
+  let i = 1;
+
+  function readBracket() {
+    // i points at '['
+    i++; // skip [
+    // recursive descent already consumed the dots before us
+    let depth = 1;
+    let start = i;
+    while (i < path.length && depth > 0) {
+      if (path[i] === "[") depth++;
+      else if (path[i] === "]") depth--;
+      if (depth === 0) break;
+      i++;
+    }
+    if (depth !== 0) throw new Error("Unbalanced brackets in path");
+    const inner = path.slice(start, i);
+    i++; // skip ]
+    return inner.trim();
+  }
+
+  function readDotName() {
+    let start = i;
+    while (i < path.length && !"[.".includes(path[i])) i++;
+    return path.slice(start, i);
+  }
+
+  while (i < path.length) {
+    const c = path[i];
+    if (c === ".") {
+      if (path[i + 1] === ".") {
+        steps.push({ type: "descend" });
+        i += 2;
+        // A recursive descent may be followed directly by [ or a name or *
+        if (path[i] === "[") {
+          steps.push(parseBracketStep(readBracket()));
+        } else if (path[i] === "*") {
+          steps.push({ type: "wildcard" });
+          i++;
+        } else if (path[i] !== undefined && path[i] !== ".") {
+          const name = readDotName();
+          if (name === "") throw new Error("Expected a name after ..");
+          steps.push({ type: "child", name });
+        }
+        continue;
+      }
+      i++; // skip single dot
+      if (path[i] === "*") {
+        steps.push({ type: "wildcard" });
+        i++;
+      } else {
+        const name = readDotName();
+        if (name === "") throw new Error("Expected a property name after .");
+        steps.push({ type: "child", name });
+      }
+    } else if (c === "[") {
+      steps.push(parseBracketStep(readBracket()));
+    } else if (c === "*") {
+      steps.push({ type: "wildcard" });
+      i++;
+    } else {
+      throw new Error("Unexpected character '" + c + "' at position " + i);
+    }
+  }
+  return steps;
+}
+
+function parseBracketStep(inner) {
+  inner = inner.trim();
+  if (inner === "*") return { type: "wildcard" };
+
+  // Filter expression: ?(...)
+  if (inner[0] === "?") {
+    let expr = inner.slice(1).trim();
+    if (expr[0] !== "(" || expr[expr.length - 1] !== ")")
+      throw new Error("Filter must look like [?(...)]");
+    expr = expr.slice(1, -1).trim();
+    return parseFilter(expr);
+  }
+
+  // Union or single: split on commas at top level
+  const parts = splitTop(inner, ",").map((p) => p.trim());
+  const names = [];
+  const indices = [];
+  for (const p of parts) {
+    if (p === "") throw new Error("Empty selector inside []");
+    const q = stripQuotes(p);
+    if (q.quoted) {
+      names.push(q.value);
+    } else if (/^-?\d+$/.test(p)) {
+      indices.push(parseInt(p, 10));
+    } else {
+      // bareword key inside brackets, e.g. [book]
+      names.push(p);
+    }
+  }
+  if (parts.length === 1) {
+    if (names.length === 1) return { type: "child", name: names[0] };
+    return { type: "index", i: indices[0] };
+  }
+  return { type: "union", names, indices };
+}
+
+function stripQuotes(s) {
+  if ((s[0] === "'" && s[s.length - 1] === "'") || (s[0] === '"' && s[s.length - 1] === '"')) {
+    return { quoted: true, value: s.slice(1, -1) };
+  }
+  return { quoted: false, value: s };
+}
+
+function splitTop(s, sep) {
+  const out = [];
+  let depth = 0, cur = "", q = null;
+  for (let k = 0; k < s.length; k++) {
+    const ch = s[k];
+    if (q) {
+      cur += ch;
+      if (ch === q) q = null;
+      continue;
+    }
+    if (ch === "'" || ch === '"') { q = ch; cur += ch; continue; }
+    if (ch === "(" || ch === "[") depth++;
+    if (ch === ")" || ch === "]") depth--;
+    if (ch === sep && depth === 0) { out.push(cur); cur = ""; continue; }
+    cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+
+function parseFilter(expr) {
+  // existence: @.prop  or @['prop']
+  // comparison: @.prop OP value
+  const ops = ["==", "!=", "<=", ">=", "<", ">"];
+  let op = null, idx = -1;
+  for (const o of ops) {
+    const p = findOp(expr, o);
+    if (p !== -1) { op = o; idx = p; break; }
+  }
+  if (op === null) {
+    // existence filter
+    const lhs = parseFilterRef(expr.trim());
+    return { type: "filter", op: "exists", ref: lhs };
+  }
+  const lhsRaw = expr.slice(0, idx).trim();
+  const rhsRaw = expr.slice(idx + op.length).trim();
+  const ref = parseFilterRef(lhsRaw);
+  const val = parseLiteral(rhsRaw);
+  return { type: "filter", op, ref, val };
+}
+
+function findOp(expr, op) {
+  // find op outside quotes; for < and > make sure not part of <= >=
+  let q = null;
+  for (let k = 0; k < expr.length; k++) {
+    const ch = expr[k];
+    if (q) { if (ch === q) q = null; continue; }
+    if (ch === "'" || ch === '"') { q = ch; continue; }
+    if (expr.startsWith(op, k)) {
+      if (op === "<" && expr[k + 1] === "=") continue;
+      if (op === ">" && expr[k + 1] === "=") continue;
+      return k;
+    }
+  }
+  return -1;
+}
+
+function parseFilterRef(s) {
+  s = s.trim();
+  if (s[0] !== "@") throw new Error("Filter reference must start with @");
+  s = s.slice(1);
+  // parse a chain of .name or ['name'] or [index]
+  const chain = [];
+  let k = 0;
+  while (k < s.length) {
+    if (s[k] === ".") {
+      k++;
+      let start = k;
+      while (k < s.length && !"[.".includes(s[k])) k++;
+      const name = s.slice(start, k);
+      if (name) chain.push(name);
+    } else if (s[k] === "[") {
+      k++;
+      let start = k, depth = 1;
+      while (k < s.length && depth > 0) {
+        if (s[k] === "[") depth++;
+        else if (s[k] === "]") { depth--; if (depth === 0) break; }
+        k++;
+      }
+      const inner = s.slice(start, k).trim();
+      k++;
+      const q = stripQuotes(inner);
+      if (q.quoted) chain.push(q.value);
+      else if (/^-?\d+$/.test(inner)) chain.push(parseInt(inner, 10));
+      else chain.push(inner);
+    } else {
+      k++;
+    }
+  }
+  return chain; // may be empty meaning @ itself
+}
+
+function parseLiteral(s) {
+  s = s.trim();
+  if (s === "true") return true;
+  if (s === "false") return false;
+  if (s === "null") return null;
+  const q = stripQuotes(s);
+  if (q.quoted) return q.value;
+  if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(s)) return parseFloat(s);
+  throw new Error("Could not parse filter value: " + s);
+}
+
+function resolveRef(node, chain) {
+  let cur = node;
+  for (const seg of chain) {
+    if (cur == null) return undefined;
+    if (typeof seg === "number") {
+      if (!Array.isArray(cur)) return undefined;
+      const idx = seg < 0 ? cur.length + seg : seg;
+      cur = cur[idx];
+    } else {
+      if (typeof cur !== "object" || Array.isArray(cur)) return undefined;
+      if (!(seg in cur)) return undefined;
+      cur = cur[seg];
+    }
+  }
+  return cur;
+}
+
+function testFilter(node, step) {
+  if (typeof node !== "object" || node === null) {
+    // filters apply to object/array members; primitives with @ chain fail unless chain empty
+  }
+  const v = resolveRef(node, step.ref);
+  if (step.op === "exists") return v !== undefined;
+  if (v === undefined) return false;
+  switch (step.op) {
+    case "==": return v === step.val;
+    case "!=": return v !== step.val;
+    case "<": return v < step.val;
+    case "<=": return v <= step.val;
+    case ">": return v > step.val;
+    case ">=": return v >= step.val;
+  }
+  return false;
+}
+
+// Evaluate steps, tracking the concrete path to each result.
+function evaluate(root, steps) {
+  // results: list of {value, path:[segments]}
+  let current = [{ value: root, path: [] }];
+  for (let s = 0; s < steps.length; s++) {
+    const step = steps[s];
+    const next = [];
+    if (step.type === "root") {
+      next.push({ value: root, path: [] });
+    } else if (step.type === "child") {
+      for (const item of current) {
+        const v = item.value;
+        if (v && typeof v === "object" && !Array.isArray(v) && step.name in v) {
+          next.push({ value: v[step.name], path: item.path.concat(step.name) });
+        } else if (Array.isArray(v) && /^-?\d+$/.test(step.name)) {
+          let idx = parseInt(step.name, 10);
+          if (idx < 0) idx += v.length;
+          if (idx >= 0 && idx < v.length) next.push({ value: v[idx], path: item.path.concat(idx) });
+        }
+      }
+    } else if (step.type === "index") {
+      for (const item of current) {
+        if (Array.isArray(item.value)) {
+          let idx = step.i < 0 ? item.value.length + step.i : step.i;
+          if (idx >= 0 && idx < item.value.length)
+            next.push({ value: item.value[idx], path: item.path.concat(idx) });
+        }
+      }
+    } else if (step.type === "wildcard") {
+      for (const item of current) {
+        const v = item.value;
+        if (Array.isArray(v)) {
+          v.forEach((el, k) => next.push({ value: el, path: item.path.concat(k) }));
+        } else if (v && typeof v === "object") {
+          for (const k of Object.keys(v)) next.push({ value: v[k], path: item.path.concat(k) });
+        }
+      }
+    } else if (step.type === "union") {
+      for (const item of current) {
+        const v = item.value;
+        for (const name of step.names) {
+          if (v && typeof v === "object" && !Array.isArray(v) && name in v)
+            next.push({ value: v[name], path: item.path.concat(name) });
+        }
+        for (const iRaw of step.indices) {
+          if (Array.isArray(v)) {
+            let idx = iRaw < 0 ? v.length + iRaw : iRaw;
+            if (idx >= 0 && idx < v.length) next.push({ value: v[idx], path: item.path.concat(idx) });
+          }
+        }
+      }
+    } else if (step.type === "descend") {
+      // recursive descent: collect current node and all descendants
+      for (const item of current) {
+        collectDescendants(item.value, item.path, next);
+      }
+    } else if (step.type === "filter") {
+      for (const item of current) {
+        const v = item.value;
+        if (Array.isArray(v)) {
+          v.forEach((el, k) => { if (testFilter(el, step)) next.push({ value: el, path: item.path.concat(k) }); });
+        } else if (v && typeof v === "object") {
+          for (const k of Object.keys(v)) if (testFilter(v[k], step)) next.push({ value: v[k], path: item.path.concat(k) });
+        }
+      }
+    }
+    current = next;
+  }
+  return current;
+}
+
+function collectDescendants(value, path, out) {
+  out.push({ value, path });
+  if (Array.isArray(value)) {
+    value.forEach((el, k) => collectDescendants(el, path.concat(k), out));
+  } else if (value && typeof value === "object") {
+    for (const k of Object.keys(value)) collectDescendants(value[k], path.concat(k), out);
+  }
+}
+
+function pathToString(segs) {
+  let s = "$";
+  for (const seg of segs) {
+    if (typeof seg === "number") s += "[" + seg + "]";
+    else if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(seg)) s += "." + seg;
+    else s += "['" + seg.replace(/'/g, "\\'") + "']";
+  }
+  return s;
+}
+
+/* ---------- UI wiring ---------- */
+
+function run() {
+  const out = $("output");
+  const countEl = $("count");
+  const jsonText = $("json-input").value.trim();
+  const pathText = $("path-input").value;
+
+  if (!jsonText) {
+    out.innerHTML = '<div class="empty-msg">Paste some JSON to begin.</div>';
+    countEl.textContent = "";
+    return;
+  }
+
+  let data;
+  try {
+    data = JSON.parse(jsonText);
+  } catch (e) {
+    out.innerHTML = '<div class="error-msg">Invalid JSON: ' + escapeHtml(e.message) + "</div>";
+    countEl.textContent = "";
+    return;
+  }
+
+  let steps;
+  try {
+    steps = parsePath(pathText);
+  } catch (e) {
+    out.innerHTML = '<div class="error-msg">Invalid JSONPath: ' + escapeHtml(e.message) + "</div>";
+    countEl.textContent = "";
+    return;
+  }
+
+  let results;
+  try {
+    results = evaluate(data, steps);
+  } catch (e) {
+    out.innerHTML = '<div class="error-msg">Evaluation error: ' + escapeHtml(e.message) + "</div>";
+    countEl.textContent = "";
+    return;
+  }
+
+  if (results.length === 0) {
+    out.innerHTML = '<div class="empty-msg">No matches for this path.</div>';
+    countEl.textContent = "0 matches";
+    return;
+  }
+
+  countEl.textContent = results.length + (results.length === 1 ? " match" : " matches");
+  const frag = [];
+  for (const r of results) {
+    const valStr = JSON.stringify(r.value, null, 2);
+    frag.push(
+      '<div class="match">' +
+      '<div class="match-path">' + escapeHtml(pathToString(r.path)) + "</div>" +
+      '<div class="match-val">' + escapeHtml(valStr === undefined ? "undefined" : valStr) + "</div>" +
+      "</div>"
+    );
+  }
+  out.innerHTML = frag.join("");
+}
+
+const SAMPLE = {
+  store: {
+    book: [
+      { category: "reference", author: "Nigel Rees", title: "Sayings of the Century", price: 8.95 },
+      { category: "fiction", author: "Evelyn Waugh", title: "Sword of Honour", price: 12.99 },
+      { category: "fiction", author: "Herman Melville", title: "Moby Dick", isbn: "0-553-21311-3", price: 8.99 },
+      { category: "fiction", author: "J. R. R. Tolkien", title: "The Lord of the Rings", isbn: "0-395-19395-8", price: 22.99 }
+    ],
+    bicycle: { color: "red", price: 19.95 }
+  },
+  expensive: 10
+};
+
+const PRESETS = [
+  "$",
+  "$.store.book[*].author",
+  "$..author",
+  "$.store.*",
+  "$..price",
+  "$.store.book[2]",
+  "$.store.book[-1]",
+  "$.store.book[0,2].title",
+  "$..book[?(@.price<10)].title",
+  "$..book[?(@.isbn)].title"
+];
+
+function buildPresets() {
+  const el = $("presets");
+  PRESETS.forEach((p) => {
+    const b = document.createElement("button");
+    b.className = "preset-btn";
+    b.type = "button";
+    b.textContent = p;
+    b.addEventListener("click", () => { $("path-input").value = p; run(); });
+    el.appendChild(b);
+  });
+}
+
+$("sample-btn").addEventListener("click", () => {
+  $("json-input").value = JSON.stringify(SAMPLE, null, 2);
+  run();
+});
+$("format-btn").addEventListener("click", () => {
+  const t = $("json-input").value.trim();
+  if (!t) return;
+  try {
+    $("json-input").value = JSON.stringify(JSON.parse(t), null, 2);
+    run();
+  } catch (e) { run(); }
+});
+$("clear-btn").addEventListener("click", () => {
+  $("json-input").value = "";
+  $("path-input").value = "$";
+  run();
+});
+
+$("json-input").addEventListener("input", run);
+$("path-input").addEventListener("input", run);
+
+// Init theme from prefers-color-scheme
+const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+setTheme(prefersDark ? "dark" : "light");
+
+buildPresets();
+$("json-input").value = JSON.stringify(SAMPLE, null, 2);
+run();
+</script>
+</body>
+</html>
